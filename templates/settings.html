@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Settings - TaskFlow{% endblock %}
+{% block breadcrumb %}Settings{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">Settings & Preferences</div>
+    <div class="page-subtitle">Manage your account and workspace preferences</div>
+  </div>
+</div>
+
+{% if messages %}
+  {% for message in messages %}
+    <div style="margin-bottom:16px;padding:12px 16px;border-radius:8px;background:{% if message.tags %}var(--green){% else %}var(--blue){% endif %};color:#fff;font-size:14px;">
+      {{ message }}
+    </div>
+  {% endfor %}
+{% endif %}
+
+<div style="max-width:600px">
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Account Information</div>
+    </div>
+    <div class="card-body">
+      <form method="POST" action="{% url 'settings' %}">
+        {% csrf_token %}
+        <div class="form-group">
+          <label>Name</label>
+          <input type="text" name="first_name" value="{{ user.first_name }}" placeholder="First name">
+          <input type="text" name="last_name" value="{{ user.last_name }}" placeholder="Last name" style="margin-top:8px">
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" value="{{ user.email }}" disabled style="background:var(--bg3);color:var(--text3)">
+        </div>
+        <div class="form-group">
+          <label>Role</label>
+          <input type="text" value="{{ user.profile.get_role_display }}" disabled style="background:var(--bg3);color:var(--text3)">
+        </div>
+        <div class="form-group">
+          <label>Bio</label>
+          <textarea name="bio" placeholder="Tell us about yourself" rows="3">{{ profile.bio }}</textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <div class="card-header">
+      <div class="card-title">Preferences</div>
+    </div>
+    <div class="card-body">
+      <div class="form-group">
+        <label>Theme</label>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <button class="btn btn-sm" onclick="setTheme('dark')" style="background:var(--bg2);color:var(--text)">Dark</button>
+          <button class="btn btn-sm" onclick="setTheme('light')" style="background:var(--bg2);color:var(--text)">Light</button>
+          <button class="btn btn-sm" onclick="setTheme('pro')" style="background:var(--bg2);color:var(--text)">Pro</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <div class="card-header">
+      <div class="card-title" style="color:var(--red)">Danger Zone</div>
+    </div>
+    <div class="card-body">
+      <div style="margin-bottom:16px">
+        <p style="color:var(--text2);margin-bottom:8px">Once you delete your account, there is no going back. Please be certain.</p>
+        <button type="button" class="btn btn-sm" style="background:var(--red)" onclick="deleteAccount()">Delete Account</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function setTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  localStorage.setItem('theme', theme);
+  document.querySelectorAll('.theme-dot').forEach(dot => {
+    dot.classList.toggle('active', dot.classList.contains(theme));
+  });
+}
+
+function deleteAccount() {
+  // Show confirmation dialog
+  const confirmed = confirm('Are you absolutely sure? This action cannot be undone.\n\nYour account and all associated data will be permanently deleted.');
+  
+  if (!confirmed) {
+    return;
+  }
+  
+  // Second confirmation
+  const secondConfirm = confirm('This is your final warning. Delete account?');
+  
+  if (!secondConfirm) {
+    return;
+  }
+  
+  // Send delete request
+  fetch('{% url "delete_account" %}', {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': getCookie('csrftoken'),
+      'Content-Type': 'application/json'
+    }
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      alert('Account deleted successfully. You will be redirected to login page.');
+      window.location.href = '{% url "login" %}';
+    } else {
+      alert('Error: ' + (data.error || 'Failed to delete account'));
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    alert('Error deleting account. Please try again.');
+  });
+}
+
+function getCookie(name) {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== '') {
+    const cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+      if (cookie.substring(0, name.length + 1) === (name + '=')) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
+    }
+  }
+  return cookieValue;
+}
+</script>
+{% endblock %}

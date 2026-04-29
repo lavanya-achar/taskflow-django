@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Project Teams - TaskFlow{% endblock %}
+{% block breadcrumb %}<a href="{% url 'projects_list' %}">Projects</a> / {{ project.name }} / Teams{% endblock %}
+
+{% block content %}
+<div class="page-header flex-between">
+  <div>
+    <div class="page-title">Teams in {{ project.name }}</div>
+    <div class="page-subtitle">{{ teams.count }} team{{ teams.count|pluralize }} in this project</div>
+  </div>
+  {% if can_create_team %}
+  <button class="btn btn-primary" onclick="openModal('create-team-modal')">+ Create Team</button>
+  {% endif %}
+</div>
+
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;">
+  {% for team in teams %}
+  <div class="card" style="cursor:pointer" onclick="window.location.href='{% url 'team_detail' team.id %}'">
+    <div class="card-body">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px">
+        <div>
+          <div style="font-family:var(--font-display);font-size:16px;font-weight:700;margin-bottom:4px">{{ team.name }}</div>
+          <div class="text-xs text-muted">{{ team.members.count }} member{{ team.members.count|pluralize }}</div>
+        </div>
+        {% if request.user == team.owner %}
+        <span class="tag" style="background:var(--blue);color:white">Owner</span>
+        {% else %}
+          {% for member in team.members.all %}
+            {% if member.user == request.user %}
+            <span class="tag" style="background:var(--green);color:white">{{ member.get_role_display }}</span>
+            {% endif %}
+          {% endfor %}
+        {% endif %}
+      </div>
+      {% if team.description %}
+      <p style="color: var(--text2); margin-bottom: 14px; font-size: 13px;">{{ team.description }}</p>
+      {% else %}
+      <p style="color: var(--text3); margin-bottom: 14px; font-size: 13px; font-style: italic;">No description</p>
+      {% endif %}
+      <div class="avatar-group">
+        {% for member in team.members.all|slice:":5" %}
+        <div class="avatar-sm" title="{{ member.user.get_full_name }}" style="background:linear-gradient(135deg,#6c63ff,#e91e8c)">
+          {{ member.user.first_name|first|upper }}{{ member.user.last_name|first|upper }}
+        </div>
+        {% endfor %}
+        {% if team.members.count > 5 %}
+        <div class="avatar-sm" style="background:var(--bg4);color:var(--text3)">+{{ team.members.count|add:"-5" }}</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% empty %}
+  <div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--text3);">
+    <div style="font-size: 18px; margin-bottom: 10px;">No teams yet</div>
+    {% if can_create_team %}
+    <button class="btn btn-primary" onclick="openModal('create-team-modal')">Create your first team</button>
+    {% else %}
+    <p>Please ask the project owner to create teams.</p>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+
+<!-- CREATE TEAM MODAL -->
+{% if can_create_team %}
+<div class="modal" id="create-team-modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <div class="modal-title">Create New Team</div>
+      <button class="modal-close" onclick="closeModal('create-team-modal')">&times;</button>
+    </div>
+    <form id="create-team-form" method="POST" action="{% url 'create_team' project.id %}">
+      {% csrf_token %}
+      <div class="form-group">
+        <label for="team-name">Team Name *</label>
+        <input type="text" id="team-name" name="name" placeholder="Enter team name" required>
+      </div>
+      <div class="form-group">
+        <label for="team-description">Description</label>
+        <textarea id="team-description" name="description" placeholder="Team description" rows="3"></textarea>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" onclick="closeModal('create-team-modal')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Create Team</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endif %}
+
+<script>
+function openModal(modalId) {
+  document.getElementById(modalId).style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal(modalId) {
+  document.getElementById(modalId).style.display = 'none';
+  document.body.style.overflow = 'auto';
+}
+</script>
+{% endblock %}

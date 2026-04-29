@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}My Tasks - TaskFlow{% endblock %}
+{% block breadcrumb %}My Tasks{% endblock %}
+
+{% block content %}
+<div class="page-header flex-between">
+  <div>
+    <div class="page-title">My Tasks</div>
+    <div class="page-subtitle">{{ tasks_count }} tasks assigned to you</div>
+  </div>
+  <button class="btn btn-primary" onclick="openModal('new-task-modal')">+ New Task</button>
+</div>
+
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;">
+  <div class="stat-card">
+    <div class="stat-label">To Do</div>
+    <div class="stat-value">{{ todo_count }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">In Progress</div>
+    <div class="stat-value">{{ in_progress_count }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">In Review</div>
+    <div class="stat-value">{{ review_count }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Completed</div>
+    <div class="stat-value">{{ done_count }}</div>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(350px,1fr));gap:16px;">
+  {% for task in tasks %}
+  <div class="card" style="border-left: 4px solid {% if task.priority == 'critical' %}var(--red){% elif task.priority == 'high' %}var(--orange){% elif task.priority == 'medium' %}var(--blue){% else %}var(--green){% endif %}">
+    <div class="card-body">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+        <div style="font-weight:600;font-size:14px">{{ task.title }}</div>
+        <span class="tag tag-{{ task.priority|lower }}">{{ task.get_priority_display }}</span>
+      </div>
+      <p style="color:var(--text2);font-size:13px;margin-bottom:10px">{{ task.description }}</p>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <span class="tag tag-{{ task.status|lower }}">{{ task.get_status_display }}</span>
+        {% if task.due_date %}
+        <span style="font-size:12px;color:var(--text3)">📅 {{ task.due_date|date:"M d" }}</span>
+        {% endif %}
+      </div>
+      <div style="font-size:12px;color:var(--text3)">
+        Project: <strong>{{ task.project.name }}</strong>
+      </div>
+    </div>
+  </div>
+  {% empty %}
+  <div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--text3);">
+    <div style="font-size: 18px; margin-bottom: 10px;">No tasks assigned</div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- CREATE TASK MODAL -->
+<div class="modal" id="new-task-modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <div class="modal-title">Create New Task</div>
+      <button class="modal-close" onclick="closeModal('new-task-modal')">&times;</button>
+    </div>
+    <form id="create-task-form" method="POST" action="{% url 'create_task' %}">
+      {% csrf_token %}
+      <div class="form-group">
+        <label for="task-title">Task Title *</label>
+        <input type="text" id="task-title" name="title" placeholder="Enter task title" required>
+      </div>
+      <div class="form-group">
+        <label for="task-description">Description</label>
+        <textarea id="task-description" name="description" placeholder="Task description" rows="3"></textarea>
+      </div>
+      <div class="form-group">
+        <label for="task-project">Project *</label>
+        <select id="task-project" name="project" required>
+          <option value="">Select a project</option>
+          {% for project in projects %}
+          <option value="{{ project.id }}">{{ project.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="task-priority">Priority</label>
+        <select id="task-priority" name="priority">
+          <option value="low">Low</option>
+          <option value="medium" selected>Medium</option>
+          <option value="high">High</option>
+          <option value="critical">Critical</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="task-assigned">Assign To</label>
+        <select id="task-assigned" name="assigned_to">
+          <option value="">Unassigned</option>
+          {% for project in projects %}
+            {% for member in project.members.all %}
+            <option value="{{ member.id }}">{{ member.get_full_name }}</option>
+            {% endfor %}
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="task-due">Due Date</label>
+        <input type="date" id="task-due" name="due_date">
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" onclick="closeModal('new-task-modal')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Create Task</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function openModal(modalId) {
+  document.getElementById(modalId).style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal(modalId) {
+  document.getElementById(modalId).style.display = 'none';
+  document.body.style.overflow = 'auto';
+}
+</script>
+{% endblock %}

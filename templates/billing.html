@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Billing - TaskFlow{% endblock %}
+{% block breadcrumb %}Billing{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">◇ Plans & Billing</div>
+    <div class="page-subtitle">Currently on Free plan</div>
+  </div>
+</div>
+
+<div class="upgrade-banner">
+  <div><strong>You're on the Free Plan.</strong> Upgrade to unlock unlimited projects, advanced analytics, and team features.</div>
+  <button class="btn btn-primary">⚡ Upgrade Now</button>
+</div>
+
+<div class="pricing-grid">
+  <div class="pricing-card">
+    <div class="pricing-name">Free</div>
+    <div class="pricing-price"><sup>$</sup>0</div>
+    <div class="pricing-period">forever free</div>
+    <ul class="pricing-features">
+      <li>1 project</li>
+      <li>Up to 5 team members</li>
+      <li>Basic Kanban board</li>
+      <li>2 sprints</li>
+      <li>10 GB file storage</li>
+      <li class="no">Advanced analytics</li>
+      <li class="no">Git integration</li>
+      <li class="no">Custom roles</li>
+    </ul>
+    <button class="btn btn-ghost" style="width:100%" disabled>Current Plan</button>
+  </div>
+
+  <div class="pricing-card featured">
+    <div class="pricing-badge">Most Popular</div>
+    <div class="pricing-name">Pro</div>
+    <div class="pricing-price"><sup>$</sup>16</div>
+    <div class="pricing-period">per user / month</div>
+    <ul class="pricing-features">
+      <li>Unlimited projects</li>
+      <li>Unlimited team members</li>
+      <li>Full Kanban + Scrum board</li>
+      <li>Unlimited sprints</li>
+      <li>25 GB file storage</li>
+      <li>Advanced analytics</li>
+      <li>Git integration</li>
+      <li>Custom roles</li>
+    </ul>
+    <button class="btn btn-primary" style="width:100%" onclick="openModal('checkout-modal')">⚡ Upgrade to Pro</button>
+  </div>
+
+  <div class="pricing-card">
+    <div class="pricing-name">Enterprise</div>
+    <div class="pricing-price"><sup>$</sup>49</div>
+    <div class="pricing-period">per user / month</div>
+    <ul class="pricing-features">
+      <li>Everything in Pro</li>
+      <li>SSO / SAML</li>
+      <li>Audit logs</li>
+      <li>500 GB file storage</li>
+      <li>Dedicated support</li>
+      <li>SLA guarantee</li>
+      <li>Custom integrations</li>
+      <li>White-labeling</li>
+    </ul>
+    <button class="btn btn-ghost" style="width:100%">Contact Sales</button>
+  </div>
+</div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ team.name }} - TaskFlow{% endblock %}
+{% block breadcrumb %}<a href="{% url 'projects_list' %}">Projects</a> / <a href="{% url 'project_teams' project.id %}">{{ project.name }}</a> / {{ team.name }}{% endblock %}
+
+{% block content %}
+<div class="page-header flex-between">
+  <div>
+    <div class="page-title">{{ team.name }}</div>
+    <div class="page-subtitle">{{ project.name }}</div>
+  </div>
+  {% if is_owner %}
+  <button class="btn btn-primary" onclick="openModal('invite-member-modal')">+ Invite Member</button>
+  {% endif %}
+</div>
+
+<div style="display:grid;grid-template-columns:2fr 1fr;gap:24px;">
+  <!-- Team Details -->
+  <div>
+    {% if team.description %}
+    <div class="card" style="margin-bottom:24px">
+      <div class="card-body">
+        <h3 style="margin-bottom:12px;font-weight:600">About This Team</h3>
+        <p style="color:var(--text2)">{{ team.description }}</p>
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="card">
+      <div class="card-body">
+        <h3 style="margin-bottom:16px;font-weight:600">Team Members ({{ team.members.count }})</h3>
+        <div style="display:grid;gap:12px">
+          {% for member in team_members %}
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:12px;background:var(--bg2);border-radius:8px">
+            <div style="display:flex;align-items:center;gap:12px">
+              <div class="avatar-sm" style="background:linear-gradient(135deg,#6c63ff,#e91e8c)">
+                {{ member.user.first_name|first|upper }}{{ member.user.last_name|first|upper }}
+              </div>
+              <div>
+                <div style="font-weight:600;font-size:14px">{{ member.user.get_full_name }}</div>
+                <div style="font-size:12px;color:var(--text3)">{{ member.get_role_display }}</div>
+              </div>
+            </div>
+            {% if is_owner and member.user != request.user and member.user != team.owner %}
+            <button class="btn btn-sm btn-ghost" onclick="if(confirm('Remove {{ member.user.get_full_name }} from team?')) window.location.href='{% url 'remove_from_team' team.id member.user.id %}'" style="color:var(--red)">Remove</button>
+            {% endif %}
+          </div>
+          {% empty %}
+          <div style="text-align:center;padding:20px;color:var(--text3)">
+            No members yet
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sidebar -->
+  <div>
+    <div class="card" style="margin-bottom:24px">
+      <div class="card-body">
+        <h3 style="margin-bottom:12px;font-weight:600">Team Info</h3>
+        <div style="display:grid;gap:12px;font-size:13px">
+          <div>
+            <div style="color:var(--text3)">Owner</div>
+            <div style="font-weight:600;margin-top:4px">{{ team.owner.get_full_name }}</div>
+          </div>
+          <div>
+            <div style="color:var(--text3)">Project</div>
+            <div style="font-weight:600;margin-top:4px">
+              <a href="{% url 'project_teams' project.id %}" style="color:var(--blue);text-decoration:none">{{ project.name }}</a>
+            </div>
+          </div>
+          <div>
+            <div style="color:var(--text3)">Created</div>
+            <div style="font-weight:600;margin-top:4px">{{ team.created_at|date:"M d, Y" }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {% if is_team_member %}
+    <div class="card">
+      <div class="card-body">
+        <h3 style="margin-bottom:12px;font-weight:600">Your Role</h3>
+        <div style="padding:12px;background:var(--bg2);border-radius:8px;text-align:center">
+          <div style="font-size:14px;font-weight:600">
+            {% for member in team.members.all %}
+              {% if member.user == request.user %}
+              {{ member.get_role_display }}
+              {% endif %}
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- INVITE MEMBER MODAL -->
+{% if is_owner %}
+<div class="modal" id="invite-member-modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <div class="modal-title">Invite Team Member</div>
+      <button class="modal-close" onclick="closeModal('invite-member-modal')">&times;</button>
+    </div>
+    <form id="invite-member-form" method="POST" action="{% url 'invite_to_team' team.id %}">
+      {% csrf_token %}
+      <div class="form-group">
+        <label for="member-email">Email Address *</label>
+        <input type="email" id="member-email" name="email" placeholder="user@example.com" required>
+      </div>
+      <div class="form-group">
+        <label for="member-role">Role</label>
+        <select id="member-role" name="role">
+          <option value="member">Member</option>
+          <option value="admin">Admin</option>
+          <option value="viewer">Viewer</option>
+        </select>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" onclick="closeModal('invite-member-modal')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Send Invite</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endif %}
+
+<script>
+function openModal(modalId) {
+  document.getElementById(modalId).style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal(modalId) {
+  document.getElementById(modalId).style.display = 'none';
+  document.body.style.overflow = 'auto';
+}
+</script>
+{% endblock %}

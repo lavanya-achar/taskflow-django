@@ -1,0 +1,198 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}TaskFlow — Project Management{% endblock %}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'style.css' %}">
+</head>
+<body>
+<div id="app">
+  <!-- SIDEBAR -->
+  <nav id="sidebar">
+    <div class="logo-area">
+      <div class="logo-icon">TF</div>
+      <div class="logo-text">Task<span>Flow</span></div>
+    </div>
+    <div class="sidebar-nav">
+      <div class="sidebar-section-title">Workspace</div>
+      <a href="{% url 'dashboard' %}" class="nav-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" data-tooltip="Home Dashboard">
+        <div class="nav-icon">⬡</div>
+        <span class="nav-label">Dashboard</span>
+      </a>
+      <a href="{% url 'projects_list' %}" class="nav-item {% if request.resolver_match.url_name == 'projects_list' %}active{% endif %}" data-tooltip="All Projects">
+        <div class="nav-icon">◫</div>
+        <span class="nav-label">Projects</span>
+        <span class="nav-badge">{{ projects_count }}</span>
+      </a>
+      <a href="{% url 'kanban' %}" class="nav-item {% if request.resolver_match.url_name == 'kanban' %}active{% endif %}" data-tooltip="Kanban Board">
+        <div class="nav-icon">⊞</div>
+        <span class="nav-label">Kanban Board</span>
+      </a>
+      <a href="{% url 'sprints' %}" class="nav-item {% if request.resolver_match.url_name == 'sprints' %}active{% endif %}" data-tooltip="Sprint Manager">
+        <div class="nav-icon">⟳</div>
+        <span class="nav-label">Sprints</span>
+      </a>
+      <div class="sidebar-section-title">Collaborate</div>
+      <a href="{% url 'team' %}" class="nav-item {% if request.resolver_match.url_name == 'team' %}active{% endif %}" data-tooltip="Team Members">
+        <div class="nav-icon">◉</div>
+        <span class="nav-label">Team</span>
+      </a>
+      <a href="{% url 'my_tasks' %}" class="nav-item {% if request.resolver_match.url_name == 'my_tasks' %}active{% endif %}" data-tooltip="My Tasks"><div class="nav-icon">☑</div><span class="nav-label">My Tasks</span><span class="nav-badge">{{ my_tasks_count }}</span></a>
+      <a href="{% url 'chat:chat' %}" class="nav-item {% if request.resolver_match.url_name == 'chat' %}active{% endif %}" data-tooltip="Messages &amp; Chat"><div class="nav-icon">◈</div><span class="nav-label">Chat</span></a>
+      <a href="{% url 'files' %}" class="nav-item {% if request.resolver_match.url_name == 'files' %}active{% endif %}" data-tooltip="File Manager">
+        <div class="nav-icon">▣</div>
+        <span class="nav-label">Files</span>
+      </a>
+      <div class="sidebar-section-title">Insights</div>
+      <a href="{% url 'analytics' %}" class="nav-item {% if request.resolver_match.url_name == 'analytics' %}active{% endif %}" data-tooltip="Analytics">
+        <div class="nav-icon">◎</div>
+        <span class="nav-label">Analytics</span>
+      </a>
+      <div class="sidebar-section-title">Account</div>
+      <a href="{% url 'billing' %}" class="nav-item {% if request.resolver_match.url_name == 'billing' %}active{% endif %}" data-tooltip="Billing">
+        <div class="nav-icon">💳</div>
+        <span class="nav-label">Billing</span>
+      </a>
+      <a href="{% url 'settings' %}" class="nav-item {% if request.resolver_match.url_name == 'settings' %}active{% endif %}" data-tooltip="Settings">
+        <div class="nav-icon">⚙</div>
+        <span class="nav-label">Settings</span>
+      </a>
+      <a href="{% url 'logout' %}" class="nav-item" data-tooltip="Logout">
+        <div class="nav-icon">🚪</div>
+        <span class="nav-label">Logout</span>
+      </a>
+    </div>
+    <div class="sidebar-footer">
+      <div class="user-card">
+        <div class="user-avatar">{{ user.first_name|first|upper }}{{ user.last_name|first|upper }}</div>
+        <div class="sidebar-footer-text">
+          <div class="user-name">{{ user.get_full_name }}</div>
+          <div class="user-role">{{ user.profile.get_role_display }}</div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- MAIN -->
+  <div id="main">
+    <!-- TOPBAR -->
+    <div id="topbar">
+      <button class="topbar-toggle-btn" onclick="toggleSidebar()" data-tooltip="Toggle sidebar">
+        <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M1 2.5A1.5 1.5 0 0 1 2.5 1h11A1.5 1.5 0 0 1 15 2.5v11a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 1 13.5zM2.5 2a.5.5 0 0 0-.5.5v11a.5.5 0 0 0 .5.5H5V2zm12 .5a.5.5 0 0 0-.5-.5H6v12h8a.5.5 0 0 0 .5-.5z"/></svg>
+      </button>
+      <div class="topbar-breadcrumb">
+        <span class="crumb" onclick="window.location.href='{% url 'dashboard' %}'">TaskFlow</span>
+        <span>›</span>
+        <span class="crumb current" id="breadcrumb-current">{% block breadcrumb %}Dashboard{% endblock %}</span>
+      </div>
+      <div class="topbar-right">
+        <div class="search-bar">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input type="text" placeholder="Search tasks, projects…" id="search-input">
+        </div>
+        <div class="theme-switcher" data-tooltip="Switch theme">
+          <div class="theme-dot dark active" onclick="setTheme('dark')"></div>
+          <div class="theme-dot light" onclick="setTheme('light')"></div>
+          <div class="theme-dot pro" onclick="setTheme('pro')"></div>
+        </div>
+        <div class="mode-toggle" data-tooltip="Switch mode">
+          <button class="mode-btn {% if user.profile.mode == 'beginner' %}active{% endif %}" onclick="switchMode('beginner', this)" title="Beginner">B</button>
+          <button class="mode-btn {% if user.profile.mode == 'professional' %}active{% endif %}" onclick="switchMode('professional', this)" title="Professional">P</button>
+        </div>
+        <div class="icon-btn dropdown" onclick="toggleNotifDropdown()" data-tooltip="Notifications">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <span class="badge" id="notif-count">{{ notifications_count }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- NOTIFICATION DROPDOWN -->
+    <div class="notif-dropdown" id="notif-dropdown">
+      <div class="notif-dropdown-header">
+        <span class="notif-dropdown-title">Notifications</span>
+        <button class="btn btn-ghost btn-sm" onclick="markAllNotificationsRead()">Mark all read</button>
+      </div>
+      <div style="max-height:360px;overflow-y:auto;padding:8px 16px;" id="notifications-list">
+        <div style="text-align: center; padding: 20px; color: var(--text3);">Loading...</div>
+      </div>
+    </div>
+
+    <!-- CONTENT AREA -->
+    <div id="content">
+      {% block content %}{% endblock %}
+    </div>
+  </div>
+</div>
+
+<!-- JavaScript -->
+<script src="{% static 'script.js' %}"></script>
+<script>
+// Initialize theme
+const savedTheme = localStorage.getItem('theme') || 'dark';
+setTheme(savedTheme);
+
+function setTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  localStorage.setItem('theme', theme);
+  document.querySelectorAll('.theme-dot').forEach(dot => {
+    dot.classList.toggle('active', dot.classList.contains(theme));
+  });
+}
+
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('collapsed');
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(e) {
+  const dropdown = document.getElementById('notif-dropdown');
+  const notifBtn = e.target.closest('.icon-btn');
+  if (!notifBtn && !dropdown.contains(e.target)) {
+    dropdown.classList.remove('show');
+  }
+});
+
+// Search functionality
+document.getElementById('search-input').addEventListener('input', function(e) {
+  const query = e.target.value;
+  if (query.length > 2) {
+    fetch(`/dashboard/search/?q=${encodeURIComponent(query)}`)
+      .then(response => response.json())
+      .then(data => {
+        // Handle search results
+        console.log('Search results:', data);
+      });
+  }
+});
+
+function switchMode(mode, button) {
+  const formData = new FormData();
+  formData.append('mode', mode);
+  
+  fetch('{% url "switch_mode" %}', {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': '{{ csrf_token }}'
+    },
+    body: formData
+  }).then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        // Update active button
+        document.querySelectorAll('.mode-btn').forEach(btn => {
+          btn.classList.remove('active');
+        });
+        button.classList.add('active');
+        
+        // Show visual feedback
+        console.log(data.message);
+      }
+    }).catch(error => console.error('Error:', error));
+}
+</script>
+</body>
+</html>

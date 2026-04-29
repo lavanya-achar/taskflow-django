@@ -1,0 +1,324 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Files - TaskFlow{% endblock %}
+{% block breadcrumb %}Files{% endblock %}
+
+{% block content %}
+<div class="page" id="files">
+  <div class="page-header">
+    <div class="page-title">📁 Files</div>
+    <div class="page-subtitle">All uploaded documents and assets ({{ files.count }} files, {{ total_size_gb }} GB used)</div>
+  </div>
+
+  <div class="dashboard-grid" style="grid-template-columns: 1fr; gap: 16px; height: calc(100vh - 180px);">
+    
+    <!-- Upload Area -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Upload New File</div>
+      </div>
+      <div class="card-body" style="padding: 32px; text-align: center;">
+        <div class="upload-zone" onclick="document.getElementById('file-input').click()">
+          <svg width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin: 0 auto 16px; display: block; color: var(--text3);">
+            <path d="M12 5v14M5 12h14" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          <div style="font-weight: 500; margin-bottom: 4px; color: var(--text);">Click to upload or drag & drop</div>
+          <div style="font-size: 13px; color: var(--text3);">PDF, Images, Docs, ZIP (max 100MB)</div>
+        </div>
+        <input type="file" id="file-input" style="display: none;" multiple accept="*/*" onchange="uploadFile(this.files[0])">
+        <div id="upload-progress" style="display: none; margin-top: 16px;">
+          <div class="progress-bar-wrap">
+            <div class="progress-bar" id="progress-bar-fill" style="width: 0%;"></div>
+          </div>
+          <div style="text-align: center; font-size: 13px; color: var(--text2); margin-top: 8px;" id="upload-text">Uploading...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Uploads -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Recent Uploads</div>
+        <button class="btn btn-ghost btn-sm" onclick="loadFiles()">⟳</button>
+      </div>
+      <div class="card-body" style="padding: 16px;">
+        <div id="recent-files">
+          {% if recent_uploads %}
+            {% for file in recent_uploads %}
+            <div class="file-item">
+              <div class="file-icon">{{ file.file_icon }}</div>
+              <div style="flex: 1; min-width: 0;">
+                <div class="file-name">{{ file.title }}</div>
+                <div class="file-meta">{{ file.size_display }} · {{ file.date_display }}{% if file.uploaded_by.username %} · {{ file.uploaded_by.username }}{% endif %}</div>
+              </div>
+              <div class="file-actions">
+                <a href="{{ file.file.url }}" target="_blank" class="btn btn-ghost btn-sm">👁</a>
+                <button class="btn btn-ghost btn-sm" onclick="showFileMenu(event)">⋮</button>
+              </div>
+            </div>
+            {% endfor %}
+          {% else %}
+            <div class="empty-state">
+              <div class="empty-state-icon">📂</div>
+              <div class="empty-state-text">No files uploaded yet</div>
+              <div style="font-size: 12px; color: var(--text3); margin-top: 4px;">Upload your first file above</div>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Storage Stats -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Storage</div>
+      </div>
+      <div class="card-body" style="text-align: center; padding: 32px;">
+        <div style="font-family: var(--font-display); font-size: 48px; font-weight: 700; color: var(--accent); margin-bottom: 16px;">{{ used_percent|floatformat:0 }}%</div>
+        <div class="progress-bar-wrap" style="width: 140px; height: 8px; margin: 0 auto 20px; border-radius: 4px;">
+          <div class="progress-bar" style="width: {{ used_percent }}%;"></div>
+        </div>
+        <div style="font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px;">{{ total_size_gb|floatformat:1 }} GB used</div>
+        <div style="font-size: 12px; color: var(--text3);">of 10 GB free plan</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<style>
+  .upload-zone {
+    border: 2px dashed var(--border2);
+    border-radius: var(--radius2);
+    padding: 48px;
+    cursor: pointer;
+    transition: all var(--transition);
+    background: var(--bg3);
+  }
+  
+  .upload-zone:hover {
+    border-color: var(--accent);
+    background: var(--bg4);
+  }
+  
+  .file-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    border-bottom: 1px solid var(--border);
+    transition: background var(--transition);
+  }
+  
+  .file-item:last-child {
+    border-bottom: none;
+  }
+  
+  .file-item:hover {
+    background: var(--bg3);
+    margin: 0 -12px;
+    padding: 12px;
+    border-radius: var(--radius);
+  }
+  
+  .file-icon {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg3);
+    border-radius: var(--radius);
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+  
+  .file-item:hover .file-icon {
+    background: var(--bg4);
+  }
+  
+  .file-name {
+    font-weight: 500;
+    font-size: 14px;
+    color: var(--text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  
+  .file-meta {
+    font-size: 12px;
+    color: var(--text3);
+    margin-top: 2px;
+  }
+  
+  .file-actions {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+  
+  #upload-progress .progress-bar-wrap {
+    height: 6px;
+    margin-bottom: 0;
+  }
+</style>
+
+<script>
+function uploadFile(file) {
+  if (!file) return;
+  
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('title', file.name.split('.')[0]);
+
+  const progressEl = document.getElementById('upload-progress');
+  const progressBar = document.getElementById('progress-bar-fill');
+  const progressText = document.getElementById('upload-text');
+  progressEl.style.display = 'block';
+
+  const xhr = new XMLHttpRequest();
+  xhr.open('POST', '/files/api/upload/');
+
+  xhr.upload.addEventListener('progress', function(e) {
+    if (e.lengthComputable) {
+      const percent = (e.loaded / e.total) * 100;
+      progressBar.style.width = percent + '%';
+      progressText.textContent = 'Uploading... ' + percent.toFixed(0) + '%';
+    }
+  });
+
+  xhr.onload = function() {
+    if (xhr.status === 200) {
+      const data = JSON.parse(xhr.responseText);
+      if (data.success) {
+        progressText.textContent = 'Upload complete! ✅';
+        progressText.style.color = 'var(--green)';
+        setTimeout(function() {
+          progressEl.style.display = 'none';
+          progressBar.style.width = '0%';
+          progressText.style.color = 'var(--text2)';
+          loadFiles();
+        }, 1500);
+      } else {
+        alert('Upload failed: ' + (data.error || 'Unknown error'));
+        progressEl.style.display = 'none';
+      }
+    } else {
+      alert('Upload failed');
+      progressEl.style.display = 'none';
+    }
+  };
+
+  xhr.onerror = function() {
+    alert('Upload error');
+    progressEl.style.display = 'none';
+  };
+
+  xhr.setRequestHeader('X-CSRFToken', getCookie('csrftoken'));
+  xhr.send(formData);
+}
+
+function loadFiles() {
+  fetch('/files/api/list/')
+    .then(function(response) { return response.json(); })
+    .then(function(data) {
+      const container = document.getElementById('recent-files');
+      if (data.files.length === 0) {
+        container.innerHTML = 
+          '<div class="empty-state">' +
+            '<div class="empty-state-icon">📂</div>' +
+            '<div class="empty-state-text">No files</div>' +
+            '<div style="font-size:12px;color:var(--text3);margin-top:4px">Upload files above</div>' +
+          '</div>';
+        return;
+      }
+      
+      container.innerHTML = data.files.map(function(file) {
+        var uploadedBy = file.uploaded_by ? ' · ' + escapeHtml(file.uploaded_by) : '';
+        return '<div class="file-item">' +
+          '<div class="file-icon">' + file.icon + '</div>' +
+          '<div style="flex:1;min-width:0">' +
+            '<div class="file-name">' + escapeHtml(file.title) + '</div>' +
+            '<div class="file-meta">' + file.size + ' · ' + file.date + uploadedBy + '</div>' +
+          '</div>' +
+          '<div class="file-actions">' +
+            '<a href="' + file.url + '" target="_blank" class="btn btn-ghost btn-sm">👁</a>' +
+            '<button class="btn btn-ghost btn-sm" onclick="showFileMenu(event)">⋮</button>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+    })
+    .catch(function(error) {
+      console.error('Error loading files:', error);
+    });
+}
+
+function getCookie(name) {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== '') {
+    const cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+      if (cookie.substring(0, name.length + 1) === (name + '=')) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
+    }
+  }
+  return cookieValue;
+}
+
+function escapeHtml(text) {
+  const map = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;'
+  };
+  return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+}
+
+function showFileMenu(event) {
+  event.stopPropagation();
+  // Add your file menu logic here
+  console.log('File menu clicked');
+}
+
+// Load files on page load
+document.addEventListener('DOMContentLoaded', function() {
+  loadFiles();
+});
+
+// Drag and drop functionality
+document.addEventListener('DOMContentLoaded', function() {
+  const uploadZone = document.querySelector('.upload-zone');
+  if (uploadZone) {
+    uploadZone.addEventListener('dragover', function(e) {
+      e.preventDefault();
+      uploadZone.style.borderColor = 'var(--accent)';
+      uploadZone.style.background = 'var(--bg4)';
+    });
+    
+    uploadZone.addEventListener('dragleave', function(e) {
+      e.preventDefault();
+      uploadZone.style.borderColor = 'var(--border2)';
+      uploadZone.style.background = 'var(--bg3)';
+    });
+    
+    uploadZone.addEventListener('drop', function(e) {
+      e.preventDefault();
+      uploadZone.style.borderColor = 'var(--border2)';
+      uploadZone.style.background = 'var(--bg3)';
+      
+      const files = e.dataTransfer.files;
+      if (files.length > 0) {
+        uploadFile(files[0]);
+      }
+    });
+  }
+});
+</script>
+{% endblock %}
