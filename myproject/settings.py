@@ -129,9 +129,8 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 STATICFILES_DIRS = [
-    str(BASE_DIR / 'static'),
+    BASE_DIR / 'static',
 ]
-
 # Authentication settings
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'dashboard'
