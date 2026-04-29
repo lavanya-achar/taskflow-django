@@ -139,3 +139,7 @@ LOGOUT_REDIRECT_URL = 'login'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 import dj_database_url
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://web-production-cd489.up.railway.app"
+]
