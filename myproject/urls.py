@@ -1,14 +1,10 @@
-"""
-URL configuration for myproject project.
-
-The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/6.0/topics/http/urls/
-"""
 from django.contrib import admin
 from django.urls import path, include
+from django.views.generic import RedirectView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+
     path('auth/', include('accounts.urls')),
     path('dashboard/', include('dashboard.urls')),
     path('projects/', include('projects.urls')),
@@ -18,6 +14,7 @@ urlpatterns = [
     path('chat/', include('chat.urls')),
     path('files/', include('files.urls')),
     path('analytics/', include('analytics.urls')),
-    path('', include('demo.urls')),
-]
 
+    # 👇 THIS IS IMPORTANT
+    path('', RedirectView.as_view(url='/auth/login/', permanent=False)),
+]
