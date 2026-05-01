@@ -144,5 +144,6 @@ STATICFILES_STORAGE = "whitenoise.storage.CompressedStaticFilesStorage"
 import dj_database_url
 
 CSRF_TRUSTED_ORIGINS = [
+    "https://taskflow-django-production.up.railway.app",
     "https://web-production-cd489.up.railway.app"
 ]
