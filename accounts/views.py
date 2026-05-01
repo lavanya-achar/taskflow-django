@@ -68,8 +68,14 @@ def signup_view(request):
     
     return render(request, 'signup.html')
 
+from django.contrib.messages import get_messages
+
 def logout_view(request):
     """Handle user logout"""
+    storage = get_messages(request)
+    for _ in storage:
+        pass  # ✅ this clears messages
+
     logout(request)
     return redirect('login')
 
